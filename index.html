@@ -141,8 +141,12 @@
 
     .input-row {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1fr 1fr 1fr;
       gap: 16px;
+    }
+
+    @media (max-width: 720px) {
+      .input-row { grid-template-columns: 1fr 1fr; }
     }
 
     @media (max-width: 520px) {
@@ -406,6 +410,10 @@
         <label for="ftl">First date of time loss</label>
         <input type="date" id="ftl" />
       </div>
+      <div class="field">
+        <label for="dcf">Date claim filed</label>
+        <input type="date" id="dcf" />
+      </div>
     </div>
   </div>
 
@@ -457,6 +465,7 @@
   function compute() {
     const doi = parseDate(document.getElementById('doi').value);
     const ftl = parseDate(document.getElementById('ftl').value);
+    const dcf = parseDate(document.getElementById('dcf').value);
     const today = new Date(); today.setHours(0, 0, 0, 0);
 
     const badgesArea = document.getElementById('badges-area');
@@ -472,7 +481,7 @@
     const d30 = addDays(doi, 29);
     const d45 = addDays(doi, 44);
 
-    let eligible = false, copStart = null, copEnd = null;
+    let timeLossEligible = false, copStart = null, copEnd = null;
 
     if (ftl) {
       const diff = Math.round((ftl - doi) / 86400000);
@@ -481,17 +490,36 @@
         return;
       }
       if (diff <= 44) {
-        eligible = true;
+        timeLossEligible = true;
         copStart = ftl;
         copEnd   = addDays(ftl, 44);
       }
     }
+
+    let claimFiledLate = false;
+    if (dcf) {
+      const diffClaim = Math.round((dcf - doi) / 86400000);
+      if (diffClaim < 0) {
+        alertArea.innerHTML = `<div class="alert alert-error"><i class="ti ti-alert-triangle"></i>Claim filed date is before the injury date. Please check the dates.</div>`;
+        return;
+      }
+      claimFiledLate = diffClaim > 29;
+    }
+
+    const eligible = timeLossEligible && !claimFiledLate;
 
     // Badges
     let badgesHTML = `<div class="card"><div class="badges">`;
     badgesHTML += `<span class="badge badge-blue"><i class="ti ti-bandage"></i>Injury: ${fmtDate(doi)}</span>`;
     badgesHTML += `<span class="badge badge-red"><i class="ti ti-calendar-x"></i>Day 30 deadline: ${fmtDate(d30)}</span>`;
     badgesHTML += `<span class="badge badge-red"><i class="ti ti-calendar-x"></i>Day 45 deadline: ${fmtDate(d45)}</span>`;
+    if (dcf) {
+      if (claimFiledLate) {
+        badgesHTML += `<span class="badge badge-red"><i class="ti ti-file-x"></i>Claim filed: ${fmtDate(dcf)} (late)</span>`;
+      } else {
+        badgesHTML += `<span class="badge badge-green"><i class="ti ti-file-check"></i>Claim filed: ${fmtDate(dcf)}</span>`;
+      }
+    }
     if (ftl) {
       badgesHTML += `<span class="badge badge-green"><i class="ti ti-clock"></i>First time loss: ${fmtDate(ftl)}</span>`;
       if (eligible) {
@@ -503,8 +531,12 @@
     badgesHTML += `</div></div>`;
     badgesArea.innerHTML = badgesHTML;
 
-    if (ftl && !eligible) {
+    if (ftl && !timeLossEligible) {
       alertArea.innerHTML = `<div class="alert alert-warning"><i class="ti ti-alert-triangle"></i>Time loss did not begin within 45 days of injury. Employee is not eligible for COP.</div>`;
+    }
+
+    if (claimFiledLate) {
+      alertArea.innerHTML += `<div class="alert alert-warning"><i class="ti ti-alert-triangle"></i>Claim was not filed within 30 days of injury. Employee is not eligible for COP.</div>`;
     }
 
     // Build calendar months
@@ -528,7 +560,6 @@
       <div class="leg-item"><div class="leg-swatch" style="background:var(--amber-50);border:0.5px solid var(--amber-100)"></div>COP period (45 days)</div>
       <div class="leg-item"><div class="leg-swatch" style="background:var(--red-50);border:0.5px solid var(--red-100)"></div>Day 30 filing deadline</div>
       <div class="leg-item"><div class="leg-swatch" style="background:var(--coral-100);border:0.5px solid var(--coral-600)"></div>Day 45 time-loss deadline</div>
-      <div class="leg-item"><div class="leg-swatch" style="background:transparent;border:1.5px solid #378ADD"></div>Today</div>
     </div>`;
 
     html += `<div class="months-container">`;
@@ -592,6 +623,7 @@
   function exportPDF() {
     const doi = parseDate(document.getElementById('doi').value);
     const ftl = parseDate(document.getElementById('ftl').value);
+    const dcf = parseDate(document.getElementById('dcf').value);
     if (!doi) { alert('Please enter a date of injury first.'); return; }
 
     const { jsPDF } = window.jspdf;
@@ -613,19 +645,30 @@
 
     const d30 = addDays(doi, 29);
     const d45 = addDays(doi, 44);
-    let copStart = null, copEnd = null, eligible = false;
+    let copStart = null, copEnd = null, timeLossEligible = false;
     if (ftl) {
       const diff = Math.round((ftl - doi) / 86400000);
-      if (diff >= 0 && diff <= 44) { eligible = true; copStart = ftl; copEnd = addDays(ftl, 44); }
+      if (diff >= 0 && diff <= 44) { timeLossEligible = true; copStart = ftl; copEnd = addDays(ftl, 44); }
     }
+
+    let claimFiledLate = false;
+    if (dcf) {
+      const diffClaim = Math.round((dcf - doi) / 86400000);
+      claimFiledLate = diffClaim > 29;
+    }
+
+    const eligible = timeLossEligible && !claimFiledLate;
 
     // Summary boxes
     const infos = [
       ['Date of Injury', fmtDate(doi), [182, 212, 244], [12, 68, 124]],
       ['Day 30 Filing Deadline', fmtDate(d30), [247, 193, 193], [121, 31, 31]],
       ['Day 45 Time-Loss Deadline', fmtDate(d45), [240, 153, 123], [74, 27, 12]],
+      dcf ? ['Date Claim Filed', fmtDate(dcf) + (claimFiledLate ? ' (late)' : ''),
+        claimFiledLate ? [247, 193, 193] : [192, 221, 151],
+        claimFiledLate ? [121, 31, 31]   : [39, 80, 10]] : null,
       ftl ? ['First Date of Time Loss', fmtDate(ftl), [192, 221, 151], [39, 80, 10]] : null,
-      ftl ? ['COP Status', eligible ? 'ELIGIBLE — 45 days from ' + fmtDate(ftl) : 'NOT ELIGIBLE',
+      (ftl || dcf) ? ['COP Status', eligible ? 'ELIGIBLE — 45 days from ' + fmtDate(ftl) : 'NOT ELIGIBLE',
         eligible ? [192, 221, 151] : [247, 193, 193],
         eligible ? [39, 80, 10]   : [121, 31, 31]] : null,
     ].filter(Boolean);
@@ -754,6 +797,7 @@
 
   document.getElementById('doi').addEventListener('change', compute);
   document.getElementById('ftl').addEventListener('change', compute);
+  document.getElementById('dcf').addEventListener('change', compute);
 </script>
 
 </body>
