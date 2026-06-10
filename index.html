@@ -267,7 +267,6 @@
 
     .day.empty { background: transparent; }
     .day.normal { background: var(--bg-secondary); border-color: var(--border); }
-    .day.today  { border: 1.5px solid #378ADD !important; }
 
     .day.injury       { background: var(--blue-50);   border-color: var(--blue-100); }
     .day.first-loss   { background: var(--green-50);  border-color: var(--green-100); }
@@ -466,7 +465,6 @@
     const doi = parseDate(document.getElementById('doi').value);
     const ftl = parseDate(document.getElementById('ftl').value);
     const dcf = parseDate(document.getElementById('dcf').value);
-    const today = new Date(); today.setHours(0, 0, 0, 0);
 
     const badgesArea = document.getElementById('badges-area');
     const alertArea  = document.getElementById('alert-area');
@@ -591,8 +589,7 @@
           cls = 'cop'; pips.push('<span class="pip pip-amber">COP</span>');
         }
 
-        const isToday = sameDay(dt, today);
-        html += `<div class="day ${cls}${isToday ? ' today' : ''}">
+        html += `<div class="day ${cls}">
           <span class="dn">${d}</span>${pips.join('')}
         </div>`;
       }
@@ -702,7 +699,6 @@
     const mPerRow = 2;
     const mW = (W - margin * 2 - 10) / mPerRow;
     const cellH = 16;
-    const today2 = new Date(); today2.setHours(0, 0, 0, 0);
 
     months.forEach((mStart, mi) => {
       const col = mi % mPerRow;
@@ -740,7 +736,6 @@
         else if (copStart && copEnd && inRange(dt, copStart, copEnd)) { fill = [250, 199, 117]; textColor = [99, 56, 6]; }
 
         if (fill) { doc.setFillColor(...fill); doc.rect(cx + 1, dy, dW - 2, cellH - 1, 'F'); }
-        if (sameDay(dt, today2)) { doc.setDrawColor(55, 138, 221); doc.setLineWidth(0.8); doc.rect(cx + 1, dy, dW - 2, cellH - 1); doc.setLineWidth(0.5); doc.setDrawColor(0, 0, 0); }
 
         doc.setTextColor(...textColor);
         doc.setFontSize(7); doc.setFont('helvetica', fill ? 'bold' : 'normal');
