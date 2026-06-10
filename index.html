@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>COP Eligibility Calendar â Federal Workers' Compensation</title>
+  <title>COP Eligibility Calendar — Federal Workers' Compensation</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/3.31.0/css/tabler-icons.min.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
@@ -390,7 +390,7 @@
     </div>
     <div>
       <h1>COP Eligibility Calendar</h1>
-      <p>Federal Workers' Compensation â Continuation of Pay Tracker</p>
+      <p>Federal Workers' Compensation — Continuation of Pay Tracker</p>
     </div>
   </div>
 
@@ -446,7 +446,7 @@
   }
 
   function fmtDate(d) {
-    if (!d) return 'â';
+    if (!d) return '—';
     return MONTHS[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
   }
 
@@ -495,7 +495,7 @@
     if (ftl) {
       badgesHTML += `<span class="badge badge-green"><i class="ti ti-clock"></i>First time loss: ${fmtDate(ftl)}</span>`;
       if (eligible) {
-        badgesHTML += `<span class="badge badge-green"><i class="ti ti-check"></i>COP eligible â 45 days from ${fmtDate(ftl)}</span>`;
+        badgesHTML += `<span class="badge badge-green"><i class="ti ti-check"></i>COP eligible — 45 days from ${fmtDate(ftl)}</span>`;
       } else {
         badgesHTML += `<span class="badge badge-red"><i class="ti ti-x"></i>NOT eligible for COP</span>`;
       }
@@ -608,7 +608,7 @@
     doc.setFontSize(16); doc.setFont('helvetica', 'bold');
     doc.text('COP Eligibility Calendar', margin, 34);
     doc.setFontSize(10); doc.setFont('helvetica', 'normal');
-    doc.text("Federal Workers' Compensation â Continuation of Pay", margin, 47);
+    doc.text("Federal Workers' Compensation — Continuation of Pay", margin, 47);
     y = 72;
 
     const d30 = addDays(doi, 29);
@@ -625,7 +625,7 @@
       ['Day 30 Filing Deadline', fmtDate(d30), [247, 193, 193], [121, 31, 31]],
       ['Day 45 Time-Loss Deadline', fmtDate(d45), [240, 153, 123], [74, 27, 12]],
       ftl ? ['First Date of Time Loss', fmtDate(ftl), [192, 221, 151], [39, 80, 10]] : null,
-      ftl ? ['COP Status', eligible ? 'ELIGIBLE â 45 days from ' + fmtDate(ftl) : 'NOT ELIGIBLE',
+      ftl ? ['COP Status', eligible ? 'ELIGIBLE — 45 days from ' + fmtDate(ftl) : 'NOT ELIGIBLE',
         eligible ? [192, 221, 151] : [247, 193, 193],
         eligible ? [39, 80, 10]   : [121, 31, 31]] : null,
     ].filter(Boolean);
@@ -736,7 +736,7 @@
     y += 22;
     doc.setFontSize(8); doc.setTextColor(160, 160, 160);
     doc.text(
-      'Generated ' + new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) + ' â For internal case management use only.',
+      'Generated ' + new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) + ' — For internal case management use only.',
       margin, y
     );
 
