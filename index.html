@@ -40,6 +40,10 @@
       --coral-100: #F5C4B3;
       --coral-600: #993C1D;
       --coral-800: #4A1B0C;
+      --teal-50: #DFF5F3;
+      --teal-100: #9FE0DA;
+      --teal-600: #0F766E;
+      --teal-800: #0B4F4A;
     }
 
     @media (prefers-color-scheme: dark) {
@@ -72,6 +76,10 @@
         --coral-100: #4A1B0C;
         --coral-600: #F0997B;
         --coral-800: #F5C4B3;
+        --teal-50: #0B2E2B;
+        --teal-100: #0B4F4A;
+        --teal-600: #5EEAD4;
+        --teal-800: #9FE0DA;
       }
     }
 
@@ -273,6 +281,8 @@
     .day.cop          { background: var(--amber-50);  border-color: var(--amber-100); }
     .day.deadline-30  { background: var(--red-50);    border-color: var(--red-100); }
     .day.deadline-45  { background: var(--coral-100); border-color: var(--coral-600); }
+    .day.rtw          { background: var(--teal-50);   border-color: var(--teal-100); }
+    .day.cop-exhausted{ background: var(--coral-100); border-color: var(--coral-600); }
 
     .day .dn {
       font-size: 13px;
@@ -286,6 +296,8 @@
     .day.cop .dn         { color: var(--amber-800); }
     .day.deadline-30 .dn { color: var(--red-800); }
     .day.deadline-45 .dn { color: var(--coral-800); }
+    .day.rtw .dn         { color: var(--teal-800); }
+    .day.cop-exhausted .dn { color: var(--coral-800); }
 
     .pip {
       font-size: 9px;
@@ -299,6 +311,7 @@
     .pip-amber  { color: var(--amber-600); }
     .pip-red    { color: var(--red-600); }
     .pip-coral  { color: var(--coral-600); }
+    .pip-teal   { color: var(--teal-600); }
 
     /* Legend */
     .legend {
@@ -414,6 +427,7 @@
         <input type="date" id="ftl" />
       </div>
     </div>
+    <div class="input-row" id="extra-fields-row"></div>
   </div>
 
   <!-- Summary Badges -->
@@ -466,13 +480,26 @@
     const ftl = parseDate(document.getElementById('ftl').value);
     const dcf = parseDate(document.getElementById('dcf').value);
 
-    const badgesArea = document.getElementById('badges-area');
-    const alertArea  = document.getElementById('alert-area');
-    const calCard    = document.getElementById('cal-card');
+    const rtw1El = document.getElementById('rtw1');
+    const ftl2El = document.getElementById('ftl2');
+    const rtw2El = document.getElementById('rtw2');
+    const rtw1Val = rtw1El ? rtw1El.value : '';
+    const ftl2Val = ftl2El ? ftl2El.value : '';
+    const rtw2Val = rtw2El ? rtw2El.value : '';
+    let rtw1 = parseDate(rtw1Val);
+    let ftl2 = parseDate(ftl2Val);
+    let rtw2 = parseDate(rtw2Val);
+
+    const badgesArea     = document.getElementById('badges-area');
+    const alertArea      = document.getElementById('alert-area');
+    const calCard        = document.getElementById('cal-card');
+    const extraFieldsRow = document.getElementById('extra-fields-row');
 
     badgesArea.innerHTML = '';
     alertArea.innerHTML  = '';
     calCard.innerHTML    = '';
+    extraFieldsRow.innerHTML = '';
+    extraFieldsRow.style.marginTop = '0';
 
     if (!doi) return;
 
@@ -506,6 +533,77 @@
 
     const eligible = timeLossEligible && !claimFiledLate;
 
+    // First RTW / remaining COP days
+    let rtw1Valid = false, remainingDays = null, rtwDeadline = null;
+    if (ftl && rtw1) {
+      const diffRtw1 = Math.round((rtw1 - ftl) / 86400000);
+      if (diffRtw1 < 0) {
+        alertArea.innerHTML += `<div class="alert alert-error"><i class="ti ti-alert-triangle"></i>First RTW date is before the first date of time loss. Please check the dates.</div>`;
+        rtw1 = null;
+      } else {
+        rtw1Valid = true;
+        remainingDays = 45 - diffRtw1;
+        rtwDeadline = addDays(rtw1, 44);
+      }
+    }
+
+    // Second time loss / second RTW
+    let ftl2Valid = false, cop2Start = null, cop2End = null, cop2ExhaustedDay = null;
+    if (rtw1Valid && remainingDays > 0 && ftl2) {
+      const diffFtl2 = Math.round((ftl2 - rtw1) / 86400000);
+      if (diffFtl2 < 0) {
+        alertArea.innerHTML += `<div class="alert alert-error"><i class="ti ti-alert-triangle"></i>2nd date of time loss is before the first RTW date. Please check the dates.</div>`;
+        ftl2 = null;
+      } else {
+        ftl2Valid = true;
+        cop2Start = ftl2;
+        const capEnd = addDays(ftl2, remainingDays - 1);
+        if (rtw2) {
+          const diffRtw2 = Math.round((rtw2 - ftl2) / 86400000);
+          if (diffRtw2 < 0) {
+            alertArea.innerHTML += `<div class="alert alert-error"><i class="ti ti-alert-triangle"></i>2nd RTW date is before the 2nd date of time loss. Please check the dates.</div>`;
+            rtw2 = null;
+            cop2End = capEnd;
+            cop2ExhaustedDay = capEnd;
+          } else {
+            const actualEnd = addDays(ftl2, diffRtw2 - 1);
+            if (actualEnd <= capEnd) {
+              cop2End = diffRtw2 > 0 ? actualEnd : null;
+            } else {
+              cop2End = capEnd;
+              cop2ExhaustedDay = capEnd;
+            }
+          }
+        } else {
+          cop2End = capEnd;
+          cop2ExhaustedDay = capEnd;
+        }
+      }
+    }
+
+    // Conditional extra fields
+    let extraHTML = '';
+    if (ftl) {
+      extraHTML += `<div class="field">
+        <label for="rtw1">First RTW (Return to Work)</label>
+        <input type="date" id="rtw1" value="${rtw1Val}" onchange="compute()" />
+      </div>`;
+      if (rtw1Valid && remainingDays > 0) {
+        extraHTML += `<div class="field">
+          <label for="ftl2">2nd Date of Time Loss</label>
+          <input type="date" id="ftl2" value="${ftl2Val}" onchange="compute()" />
+        </div>`;
+        if (ftl2Valid) {
+          extraHTML += `<div class="field">
+            <label for="rtw2">2nd RTW</label>
+            <input type="date" id="rtw2" value="${rtw2Val}" onchange="compute()" />
+          </div>`;
+        }
+      }
+    }
+    extraFieldsRow.innerHTML = extraHTML;
+    extraFieldsRow.style.marginTop = extraHTML ? '16px' : '0';
+
     // Badges
     let badgesHTML = `<div class="card"><div class="badges">`;
     badgesHTML += `<span class="badge badge-blue"><i class="ti ti-bandage"></i>Injury: ${fmtDate(doi)}</span>`;
@@ -530,11 +628,26 @@
         badgesHTML += `<span class="badge badge-red"><i class="ti ti-x"></i>NOT eligible for COP</span>`;
       }
     }
+    if (rtw1Valid) {
+      badgesHTML += `<span class="badge badge-green"><i class="ti ti-briefcase"></i>First RTW: ${fmtDate(rtw1)}</span>`;
+      if (remainingDays <= 0) {
+        badgesHTML += `<span class="badge badge-red"><i class="ti ti-calendar-x"></i>COP exhausted</span>`;
+      } else {
+        badgesHTML += `<span class="badge badge-green"><i class="ti ti-calendar-stats"></i>${remainingDays} day${remainingDays === 1 ? '' : 's'} remaining</span>`;
+      }
+      badgesHTML += `<span class="badge badge-amber"><i class="ti ti-calendar-x"></i>RTW +45 Day Deadline: ${fmtDate(rtwDeadline)}</span>`;
+    }
+    if (ftl2Valid) {
+      badgesHTML += `<span class="badge badge-green"><i class="ti ti-clock"></i>2nd time loss: ${fmtDate(ftl2)}</span>`;
+    }
+    if (rtw2) {
+      badgesHTML += `<span class="badge badge-green"><i class="ti ti-briefcase"></i>2nd RTW: ${fmtDate(rtw2)}</span>`;
+    }
     badgesHTML += `</div></div>`;
     badgesArea.innerHTML = badgesHTML;
 
     if (ftl && !timeLossEligible) {
-      alertArea.innerHTML = `<div class="alert alert-warning"><i class="ti ti-alert-triangle"></i>Time loss did not begin within 45 days of injury. Employee is not eligible for COP.</div>`;
+      alertArea.innerHTML += `<div class="alert alert-warning"><i class="ti ti-alert-triangle"></i>Time loss did not begin within 45 days of injury. Employee is not eligible for COP.</div>`;
     }
 
     if (claimFiledLate) {
@@ -543,7 +656,10 @@
 
     // Build calendar months
     const calStart  = new Date(doi.getFullYear(), doi.getMonth(), 1);
-    const endDate   = copEnd ? copEnd : d45;
+    let endDate = copEnd ? copEnd : d45;
+    if (rtwDeadline && rtwDeadline > endDate) endDate = rtwDeadline;
+    if (cop2End && cop2End > endDate) endDate = cop2End;
+    if (rtw2 && rtw2 > endDate) endDate = rtw2;
     const calEndDate= new Date(endDate.getFullYear(), endDate.getMonth() + 1, 0);
 
     const months = [];
@@ -574,13 +690,19 @@
 
         if (sameDay(dt, doi)) {
           cls = 'injury'; pips.push('<span class="pip pip-blue">Injury</span>');
+        } else if ((rtw1 && sameDay(dt, rtw1)) || (rtw2 && sameDay(dt, rtw2))) {
+          cls = 'rtw'; pips.push('<span class="pip pip-teal">RTW</span>');
         } else if (sameDay(dt, d30) && !dcf) {
           cls = 'deadline-30'; pips.push('<span class="pip pip-red">Day 30</span>');
         } else if (sameDay(dt, d45) && !ftl) {
           cls = 'deadline-45'; pips.push('<span class="pip pip-coral">Day 45</span>');
         } else if (ftl && sameDay(dt, ftl)) {
           cls = 'first-loss'; pips.push('<span class="pip pip-green">First loss</span>');
+        } else if (cop2ExhaustedDay && sameDay(dt, cop2ExhaustedDay)) {
+          cls = 'cop-exhausted'; pips.push('<span class="pip pip-coral">COP exhausted</span>');
         } else if (copStart && copEnd && inRange(dt, copStart, copEnd)) {
+          cls = 'cop'; pips.push('<span class="pip pip-amber">COP</span>');
+        } else if (cop2Start && cop2End && inRange(dt, cop2Start, cop2End)) {
           cls = 'cop'; pips.push('<span class="pip pip-amber">COP</span>');
         }
 
@@ -601,6 +723,8 @@
       <div class="leg-item"><div class="leg-swatch" style="background:var(--amber-50);border:0.5px solid var(--amber-100)"></div>COP period (45 days)</div>
       <div class="leg-item"><div class="leg-swatch" style="background:var(--red-50);border:0.5px solid var(--red-100)"></div>Day 30 filing deadline</div>
       <div class="leg-item"><div class="leg-swatch" style="background:var(--coral-100);border:0.5px solid var(--coral-600)"></div>Day 45 time-loss deadline</div>
+      <div class="leg-item"><div class="leg-swatch" style="background:var(--teal-50);border:0.5px solid var(--teal-100)"></div>Return to work</div>
+      <div class="leg-item"><div class="leg-swatch" style="background:var(--coral-100);border:0.5px solid var(--coral-600)"></div>COP exhausted</div>
     </div>`;
 
     // Actions
@@ -616,6 +740,9 @@
   function clearAll() {
     document.getElementById('doi').value = '';
     document.getElementById('ftl').value = '';
+    document.getElementById('dcf').value = '';
+    document.getElementById('extra-fields-row').innerHTML = '';
+    document.getElementById('extra-fields-row').style.marginTop = '0';
     document.getElementById('badges-area').innerHTML = '';
     document.getElementById('alert-area').innerHTML  = '';
     document.getElementById('cal-card').innerHTML    = '';
@@ -625,6 +752,12 @@
     const doi = parseDate(document.getElementById('doi').value);
     const ftl = parseDate(document.getElementById('ftl').value);
     const dcf = parseDate(document.getElementById('dcf').value);
+    const rtw1El = document.getElementById('rtw1');
+    const ftl2El = document.getElementById('ftl2');
+    const rtw2El = document.getElementById('rtw2');
+    let rtw1 = rtw1El ? parseDate(rtw1El.value) : null;
+    let ftl2 = ftl2El ? parseDate(ftl2El.value) : null;
+    let rtw2 = rtw2El ? parseDate(rtw2El.value) : null;
     if (!doi) { alert('Please enter a date of injury first.'); return; }
 
     const { jsPDF } = window.jspdf;
@@ -660,6 +793,51 @@
 
     const eligible = timeLossEligible && !claimFiledLate;
 
+    // First RTW / remaining COP days
+    let rtw1Valid = false, remainingDays = null, rtwDeadline = null;
+    if (ftl && rtw1) {
+      const diffRtw1 = Math.round((rtw1 - ftl) / 86400000);
+      if (diffRtw1 >= 0) {
+        rtw1Valid = true;
+        remainingDays = 45 - diffRtw1;
+        rtwDeadline = addDays(rtw1, 44);
+      } else {
+        rtw1 = null;
+      }
+    }
+
+    // Second time loss / second RTW
+    let ftl2Valid = false, cop2Start = null, cop2End = null, cop2ExhaustedDay = null;
+    if (rtw1Valid && remainingDays > 0 && ftl2) {
+      const diffFtl2 = Math.round((ftl2 - rtw1) / 86400000);
+      if (diffFtl2 >= 0) {
+        ftl2Valid = true;
+        cop2Start = ftl2;
+        const capEnd = addDays(ftl2, remainingDays - 1);
+        if (rtw2) {
+          const diffRtw2 = Math.round((rtw2 - ftl2) / 86400000);
+          if (diffRtw2 >= 0) {
+            const actualEnd = addDays(ftl2, diffRtw2 - 1);
+            if (actualEnd <= capEnd) {
+              cop2End = diffRtw2 > 0 ? actualEnd : null;
+            } else {
+              cop2End = capEnd;
+              cop2ExhaustedDay = capEnd;
+            }
+          } else {
+            rtw2 = null;
+            cop2End = capEnd;
+            cop2ExhaustedDay = capEnd;
+          }
+        } else {
+          cop2End = capEnd;
+          cop2ExhaustedDay = capEnd;
+        }
+      } else {
+        ftl2 = null;
+      }
+    }
+
     // Summary boxes
     const infos = [
       ['Date of Injury', fmtDate(doi), [182, 212, 244], [12, 68, 124]],
@@ -672,6 +850,12 @@
       (ftl || dcf) ? ['COP Status', eligible ? 'ELIGIBLE — 45 days from ' + fmtDate(ftl) : 'NOT ELIGIBLE',
         eligible ? [192, 221, 151] : [247, 193, 193],
         eligible ? [39, 80, 10]   : [121, 31, 31]] : null,
+      rtw1Valid ? ['First RTW', fmtDate(rtw1), [159, 224, 218], [11, 79, 74]] : null,
+      (rtw1Valid && !ftl2Valid) ? ['Remaining COP Days', remainingDays <= 0 ? 'COP exhausted' : `${remainingDays} day${remainingDays === 1 ? '' : 's'} remaining`,
+        remainingDays <= 0 ? [247, 193, 193] : [192, 221, 151],
+        remainingDays <= 0 ? [121, 31, 31]   : [39, 80, 10]] : null,
+      ftl2Valid ? ['2nd Date of Time Loss', fmtDate(ftl2), [192, 221, 151], [39, 80, 10]] : null,
+      rtw2 ? ['2nd RTW', fmtDate(rtw2), [159, 224, 218], [11, 79, 74]] : null,
     ].filter(Boolean);
 
     const bW = (W - margin * 2 - 10) / 2;
@@ -694,7 +878,10 @@
     const DAYS_S   = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
     const MONTHS_S = ['January','February','March','April','May','June','July','August','September','October','November','December'];
     const calStart   = new Date(doi.getFullYear(), doi.getMonth(), 1);
-    const endDate    = copEnd ? copEnd : d45;
+    let endDate = copEnd ? copEnd : d45;
+    if (rtwDeadline && rtwDeadline > endDate) endDate = rtwDeadline;
+    if (cop2End && cop2End > endDate) endDate = cop2End;
+    if (rtw2 && rtw2 > endDate) endDate = rtw2;
     const calEndDate = new Date(endDate.getFullYear(), endDate.getMonth() + 1, 0);
     const months = [];
     let cur = new Date(calStart);
@@ -734,10 +921,13 @@
         let fill = null, textColor = [60, 60, 60], label = null;
 
         if (sameDay(dt, doi))              { fill = [182, 212, 244]; textColor = [12, 68, 124];  label = 'INJ'; }
+        else if ((rtw1 && sameDay(dt, rtw1)) || (rtw2 && sameDay(dt, rtw2))) { fill = [159, 224, 218]; textColor = [11, 79, 74]; label = 'RTW'; }
         else if (sameDay(dt, d30) && !dcf) { fill = [247, 193, 193]; textColor = [121, 31, 31];  label = 'D30'; }
         else if (sameDay(dt, d45) && !ftl) { fill = [240, 153, 123]; textColor = [74, 27, 12];   label = 'D45'; }
         else if (ftl && sameDay(dt, ftl))  { fill = [192, 221, 151]; textColor = [39, 80, 10];   label = 'FTL'; }
+        else if (cop2ExhaustedDay && sameDay(dt, cop2ExhaustedDay)) { fill = [240, 153, 123]; textColor = [74, 27, 12]; label = 'EXH'; }
         else if (copStart && copEnd && inRange(dt, copStart, copEnd)) { fill = [250, 199, 117]; textColor = [99, 56, 6]; }
+        else if (cop2Start && cop2End && inRange(dt, cop2Start, cop2End)) { fill = [250, 199, 117]; textColor = [99, 56, 6]; }
 
         if (fill) { doc.setFillColor(...fill); doc.rect(cx + 1, dy, dW - 2, cellH - 1, 'F'); }
 
@@ -765,6 +955,8 @@
       [[250, 199, 117], 'COP period (45 days)'],
       [[247, 193, 193], 'Day 30 filing deadline'],
       [[240, 153, 123], 'Day 45 time-loss deadline'],
+      [[159, 224, 218], 'Return to work'],
+      [[240, 153, 123], 'COP exhausted'],
     ];
 
     const lW = (W - margin * 2) / legItems.length;
