@@ -509,8 +509,12 @@
     // Badges
     let badgesHTML = `<div class="card"><div class="badges">`;
     badgesHTML += `<span class="badge badge-blue"><i class="ti ti-bandage"></i>Injury: ${fmtDate(doi)}</span>`;
-    badgesHTML += `<span class="badge badge-red"><i class="ti ti-calendar-x"></i>30 Day Filing Deadline: ${fmtDate(d30)}</span>`;
-    badgesHTML += `<span class="badge badge-red"><i class="ti ti-calendar-x"></i>45 Day Time-Loss Deadline: ${fmtDate(d45)}</span>`;
+    if (!dcf) {
+      badgesHTML += `<span class="badge badge-red"><i class="ti ti-calendar-x"></i>30 Day Filing Deadline: ${fmtDate(d30)}</span>`;
+    }
+    if (!ftl) {
+      badgesHTML += `<span class="badge badge-red"><i class="ti ti-calendar-x"></i>45 Day Time-Loss Deadline: ${fmtDate(d45)}</span>`;
+    }
     if (dcf) {
       if (claimFiledLate) {
         badgesHTML += `<span class="badge badge-red"><i class="ti ti-file-x"></i>Claim filed: ${fmtDate(dcf)} (late)</span>`;
@@ -557,6 +561,7 @@
       <div class="leg-item"><div class="leg-swatch" style="background:var(--green-50);border:0.5px solid var(--green-100)"></div>First time loss</div>
       <div class="leg-item"><div class="leg-swatch" style="background:var(--amber-50);border:0.5px solid var(--amber-100)"></div>COP period (45 days)</div>
       <div class="leg-item"><div class="leg-swatch" style="background:var(--red-50);border:0.5px solid var(--red-100)"></div>Day 30 filing deadline</div>
+      <div class="leg-item"><div class="leg-swatch" style="background:var(--coral-100);border:0.5px solid var(--coral-600)"></div>Day 45 time-loss deadline</div>
     </div>`;
 
     html += `<div class="months-container">`;
@@ -578,8 +583,10 @@
 
         if (sameDay(dt, doi)) {
           cls = 'injury'; pips.push('<span class="pip pip-blue">Injury</span>');
-        } else if (sameDay(dt, d30) && (!dcf || claimFiledLate)) {
+        } else if (sameDay(dt, d30) && !dcf) {
           cls = 'deadline-30'; pips.push('<span class="pip pip-red">Day 30</span>');
+        } else if (sameDay(dt, d45) && !ftl) {
+          cls = 'deadline-45'; pips.push('<span class="pip pip-coral">Day 45</span>');
         } else if (ftl && sameDay(dt, ftl)) {
           cls = 'first-loss'; pips.push('<span class="pip pip-green">First loss</span>');
         } else if (copStart && copEnd && inRange(dt, copStart, copEnd)) {
@@ -656,8 +663,8 @@
     // Summary boxes
     const infos = [
       ['Date of Injury', fmtDate(doi), [182, 212, 244], [12, 68, 124]],
-      ['Day 30 Filing Deadline', fmtDate(d30), [247, 193, 193], [121, 31, 31]],
-      ['Day 45 Time-Loss Deadline', fmtDate(d45), [240, 153, 123], [74, 27, 12]],
+      !dcf ? ['Day 30 Filing Deadline', fmtDate(d30), [247, 193, 193], [121, 31, 31]] : null,
+      !ftl ? ['Day 45 Time-Loss Deadline', fmtDate(d45), [240, 153, 123], [74, 27, 12]] : null,
       dcf ? ['Date Claim Filed', fmtDate(dcf) + (claimFiledLate ? ' (late)' : ''),
         claimFiledLate ? [247, 193, 193] : [192, 221, 151],
         claimFiledLate ? [121, 31, 31]   : [39, 80, 10]] : null,
@@ -727,7 +734,8 @@
         let fill = null, textColor = [60, 60, 60], label = null;
 
         if (sameDay(dt, doi))              { fill = [182, 212, 244]; textColor = [12, 68, 124];  label = 'INJ'; }
-        else if (sameDay(dt, d30) && (!dcf || claimFiledLate)) { fill = [247, 193, 193]; textColor = [121, 31, 31];  label = 'D30'; }
+        else if (sameDay(dt, d30) && !dcf) { fill = [247, 193, 193]; textColor = [121, 31, 31];  label = 'D30'; }
+        else if (sameDay(dt, d45) && !ftl) { fill = [240, 153, 123]; textColor = [74, 27, 12];   label = 'D45'; }
         else if (ftl && sameDay(dt, ftl))  { fill = [192, 221, 151]; textColor = [39, 80, 10];   label = 'FTL'; }
         else if (copStart && copEnd && inRange(dt, copStart, copEnd)) { fill = [250, 199, 117]; textColor = [99, 56, 6]; }
 
