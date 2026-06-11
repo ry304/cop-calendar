@@ -555,15 +555,6 @@
 
     let html = `<div class="card">`;
 
-    // Legend
-    html += `<div class="legend">
-      <div class="leg-item"><div class="leg-swatch" style="background:var(--blue-50);border:0.5px solid var(--blue-100)"></div>Date of injury</div>
-      <div class="leg-item"><div class="leg-swatch" style="background:var(--green-50);border:0.5px solid var(--green-100)"></div>First time loss</div>
-      <div class="leg-item"><div class="leg-swatch" style="background:var(--amber-50);border:0.5px solid var(--amber-100)"></div>COP period (45 days)</div>
-      <div class="leg-item"><div class="leg-swatch" style="background:var(--red-50);border:0.5px solid var(--red-100)"></div>Day 30 filing deadline</div>
-      <div class="leg-item"><div class="leg-swatch" style="background:var(--coral-100);border:0.5px solid var(--coral-600)"></div>Day 45 time-loss deadline</div>
-    </div>`;
-
     html += `<div class="months-container">`;
 
     months.forEach(mStart => {
@@ -602,6 +593,15 @@
     });
 
     html += `</div>`;
+
+    // Legend
+    html += `<div class="legend" style="margin-top:20px">
+      <div class="leg-item"><div class="leg-swatch" style="background:var(--blue-50);border:0.5px solid var(--blue-100)"></div>Date of injury</div>
+      <div class="leg-item"><div class="leg-swatch" style="background:var(--green-50);border:0.5px solid var(--green-100)"></div>First time loss</div>
+      <div class="leg-item"><div class="leg-swatch" style="background:var(--amber-50);border:0.5px solid var(--amber-100)"></div>COP period (45 days)</div>
+      <div class="leg-item"><div class="leg-swatch" style="background:var(--red-50);border:0.5px solid var(--red-100)"></div>Day 30 filing deadline</div>
+      <div class="leg-item"><div class="leg-swatch" style="background:var(--coral-100);border:0.5px solid var(--coral-600)"></div>Day 45 time-loss deadline</div>
+    </div>`;
 
     // Actions
     html += `<div class="actions" style="margin-top:20px">
