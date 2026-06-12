@@ -544,6 +544,10 @@
         rtw1Valid = true;
         remainingDays = 45 - diffRtw1;
         rtwDeadline = addDays(rtw1, 44);
+        if (copEnd) {
+          const cap = addDays(rtw1, -1);
+          if (cap < copEnd) copEnd = cap;
+        }
       }
     }
 
@@ -700,6 +704,8 @@
           cls = 'first-loss'; pips.push('<span class="pip pip-green">First loss</span>');
         } else if (cop2ExhaustedDay && sameDay(dt, cop2ExhaustedDay)) {
           cls = 'cop-exhausted'; pips.push('<span class="pip pip-coral">COP exhausted</span>');
+        } else if (cop2Start && sameDay(dt, cop2Start)) {
+          cls = 'first-loss'; pips.push('<span class="pip pip-green">2nd loss</span>');
         } else if (copStart && copEnd && inRange(dt, copStart, copEnd)) {
           cls = 'cop'; pips.push('<span class="pip pip-amber">COP</span>');
         } else if (cop2Start && cop2End && inRange(dt, cop2Start, cop2End)) {
@@ -801,6 +807,10 @@
         rtw1Valid = true;
         remainingDays = 45 - diffRtw1;
         rtwDeadline = addDays(rtw1, 44);
+        if (copEnd) {
+          const cap = addDays(rtw1, -1);
+          if (cap < copEnd) copEnd = cap;
+        }
       } else {
         rtw1 = null;
       }
@@ -926,6 +936,7 @@
         else if (sameDay(dt, d45) && !ftl) { fill = [240, 153, 123]; textColor = [74, 27, 12];   label = 'D45'; }
         else if (ftl && sameDay(dt, ftl))  { fill = [192, 221, 151]; textColor = [39, 80, 10];   label = 'FTL'; }
         else if (cop2ExhaustedDay && sameDay(dt, cop2ExhaustedDay)) { fill = [240, 153, 123]; textColor = [74, 27, 12]; label = 'EXH'; }
+        else if (cop2Start && sameDay(dt, cop2Start)) { fill = [192, 221, 151]; textColor = [39, 80, 10]; label = 'FTL2'; }
         else if (copStart && copEnd && inRange(dt, copStart, copEnd)) { fill = [250, 199, 117]; textColor = [99, 56, 6]; }
         else if (cop2Start && cop2End && inRange(dt, cop2Start, cop2End)) { fill = [250, 199, 117]; textColor = [99, 56, 6]; }
 
