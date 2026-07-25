@@ -614,12 +614,12 @@
     if (!dcf) {
       badgesHTML += `<span class="badge badge-red"><i class="ti ti-calendar-x"></i>30 Day Filing Deadline: ${fmtDate(d30)}</span>`;
     }
-    if (!ftl) {
+    if (!ftl && !claimFiledLate) {
       badgesHTML += `<span class="badge badge-red"><i class="ti ti-calendar-x"></i>45 Day Time-Loss Deadline: ${fmtDate(d45)}</span>`;
     }
     if (dcf) {
       if (claimFiledLate) {
-        badgesHTML += `<span class="badge badge-red"><i class="ti ti-file-x"></i>Claim filed: ${fmtDate(dcf)} (late)</span>`;
+        badgesHTML += `<span class="badge badge-red"><i class="ti ti-file-x"></i>Claim filed: ${fmtDate(dcf)}</span>`;
       } else {
         badgesHTML += `<span class="badge badge-green"><i class="ti ti-file-check"></i>Claim filed: ${fmtDate(dcf)}</span>`;
       }
@@ -656,6 +656,8 @@
 
     if (claimFiledLate) {
       alertArea.innerHTML += `<div class="alert alert-warning"><i class="ti ti-alert-triangle"></i>Claim was not filed within 30 days of injury. Employee is not eligible for COP.</div>`;
+      calCard.innerHTML = `<div class="card"><div class="actions"><button class="btn" onclick="clearAll()"><i class="ti ti-refresh"></i>Clear</button></div></div>`;
+      return;
     }
 
     // Build calendar months
