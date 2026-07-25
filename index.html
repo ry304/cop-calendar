@@ -561,8 +561,12 @@
       } else {
         ftl2Valid = true;
         cop2Start = ftl2;
-        const capEnd = addDays(ftl2, remainingDays - 1);
-        if (rtw2) {
+        const rawCapEnd = addDays(ftl2, remainingDays - 1);
+        const capEnd = rawCapEnd > rtwDeadline ? rtwDeadline : rawCapEnd;
+        if (capEnd < ftl2) {
+          alertArea.innerHTML += `<div class="alert alert-warning"><i class="ti ti-alert-triangle"></i>2nd time loss began after the 45-day RTW deadline (${fmtDate(rtwDeadline)}). No remaining COP is available.</div>`;
+          cop2Start = null;
+        } else if (rtw2) {
           const diffRtw2 = Math.round((rtw2 - ftl2) / 86400000);
           if (diffRtw2 < 0) {
             alertArea.innerHTML += `<div class="alert alert-error"><i class="ti ti-alert-triangle"></i>2nd RTW date is before the 2nd date of time loss. Please check the dates.</div>`;
@@ -614,15 +618,15 @@
     if (!dcf) {
       badgesHTML += `<span class="badge badge-red"><i class="ti ti-calendar-x"></i>30 Day Filing Deadline: ${fmtDate(d30)}</span>`;
     }
-    if (!ftl && !claimFiledLate) {
-      badgesHTML += `<span class="badge badge-red"><i class="ti ti-calendar-x"></i>45 Day Time-Loss Deadline: ${fmtDate(d45)}</span>`;
-    }
     if (dcf) {
       if (claimFiledLate) {
         badgesHTML += `<span class="badge badge-red"><i class="ti ti-file-x"></i>Claim filed: ${fmtDate(dcf)}</span>`;
       } else {
         badgesHTML += `<span class="badge badge-green"><i class="ti ti-file-check"></i>Claim filed: ${fmtDate(dcf)}</span>`;
       }
+    }
+    if (!ftl && !claimFiledLate) {
+      badgesHTML += `<span class="badge badge-red"><i class="ti ti-calendar-x"></i>45 Day Time-Loss Deadline: ${fmtDate(d45)}</span>`;
     }
     if (ftl) {
       badgesHTML += `<span class="badge badge-green"><i class="ti ti-clock"></i>First time loss: ${fmtDate(ftl)}</span>`;
@@ -703,11 +707,13 @@
         } else if (sameDay(dt, d45) && !ftl) {
           cls = 'deadline-45'; pips.push('<span class="pip pip-coral">Day 45</span>');
         } else if (ftl && sameDay(dt, ftl)) {
-          cls = 'first-loss'; pips.push('<span class="pip pip-green">First loss</span>');
+          cls = 'first-loss'; pips.push('<span class="pip pip-green">1st time loss</span>');
+        } else if (rtwDeadline && sameDay(dt, rtwDeadline) && !(cop2ExhaustedDay && cop2ExhaustedDay < rtwDeadline)) {
+          cls = 'deadline-45'; pips.push('<span class="pip pip-coral">RTW+45</span>');
         } else if (cop2ExhaustedDay && sameDay(dt, cop2ExhaustedDay)) {
           cls = 'cop-exhausted'; pips.push('<span class="pip pip-coral">COP exhausted</span>');
         } else if (cop2Start && sameDay(dt, cop2Start)) {
-          cls = 'first-loss'; pips.push('<span class="pip pip-green">2nd loss</span>');
+          cls = 'first-loss'; pips.push('<span class="pip pip-green">2nd time loss</span>');
         } else if (copStart && copEnd && inRange(dt, copStart, copEnd)) {
           cls = 'cop'; pips.push('<span class="pip pip-amber">COP</span>');
         } else if (cop2Start && cop2End && inRange(dt, cop2Start, cop2End)) {
@@ -825,8 +831,11 @@
       if (diffFtl2 >= 0) {
         ftl2Valid = true;
         cop2Start = ftl2;
-        const capEnd = addDays(ftl2, remainingDays - 1);
-        if (rtw2) {
+        const rawCapEnd = addDays(ftl2, remainingDays - 1);
+        const capEnd = rawCapEnd > rtwDeadline ? rtwDeadline : rawCapEnd;
+        if (capEnd < ftl2) {
+          cop2Start = null;
+        } else if (rtw2) {
           const diffRtw2 = Math.round((rtw2 - ftl2) / 86400000);
           if (diffRtw2 >= 0) {
             const actualEnd = addDays(ftl2, diffRtw2 - 1);
@@ -937,6 +946,7 @@
         else if (sameDay(dt, d30) && !dcf) { fill = [247, 193, 193]; textColor = [121, 31, 31];  label = 'D30'; }
         else if (sameDay(dt, d45) && !ftl) { fill = [240, 153, 123]; textColor = [74, 27, 12];   label = 'D45'; }
         else if (ftl && sameDay(dt, ftl))  { fill = [192, 221, 151]; textColor = [39, 80, 10];   label = 'FTL'; }
+        else if (rtwDeadline && sameDay(dt, rtwDeadline) && !(cop2ExhaustedDay && cop2ExhaustedDay < rtwDeadline)) { fill = [240, 153, 123]; textColor = [74, 27, 12]; label = 'RTW45'; }
         else if (cop2ExhaustedDay && sameDay(dt, cop2ExhaustedDay)) { fill = [240, 153, 123]; textColor = [74, 27, 12]; label = 'EXH'; }
         else if (cop2Start && sameDay(dt, cop2Start)) { fill = [192, 221, 151]; textColor = [39, 80, 10]; label = 'FTL2'; }
         else if (copStart && copEnd && inRange(dt, copStart, copEnd)) { fill = [250, 199, 117]; textColor = [99, 56, 6]; }
