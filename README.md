@@ -33,17 +33,19 @@ Click **Export to PDF** to download a dated, printable calendar â named automat
 
 ## Tech stack
 
-- Pure HTML, CSS, and JavaScript â no framework, no build step
-- [jsPDF](https://github.com/parallax/jsPDF) for PDF export
-- [Tabler Icons](https://tabler.io/icons) for UI icons
+- Pure HTML, CSS, and JavaScript — no framework, no build step
+- [jsPDF](https://github.com/parallax/jsPDF) for PDF export, inlined directly into `index.html`
+- Hand-rolled inline SVG icons (no icon font or external stylesheet)
+- 100% self-contained: `index.html` makes zero external network requests (no CDN, no fonts, no analytics), so it works when uploaded as a single file to SharePoint, a file share, or any static host, including offline
 
 ## Deployment
 
-This is a static single-file app. Deploy to any static host:
+This is a static single-file app with no external dependencies. Deploy anywhere:
 
-- **Vercel** â connect GitHub repo, auto-deploys on push
-- **Netlify** â drag-and-drop `index.html` or connect GitHub
-- **GitHub Pages** â enable in repo Settings â Pages
+- **SharePoint** — upload `index.html` directly to a document library or embed it
+- **Vercel** — connect GitHub repo, auto-deploys on push (`vercel.json` sets security headers)
+- **Netlify** — drag-and-drop `index.html` or connect GitHub
+- **GitHub Pages** — enable in repo Settings → Pages
 
 ## Local development
 
